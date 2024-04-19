@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 
 class Workout(BaseModel):
-    exercise: str
+    id: int
+    name: str
     set: int
     rep: int
     weight: int

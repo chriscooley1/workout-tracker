@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "name": "Bench Press",
+        "set": 3,
+        "rep": 10,
+        "weight": 100
+    },
+    {
+        "id": 2,
+        "name": "Curls",
+        "set": 3,
+        "rep": 10,
+        "weight": 40
+    },
+    {
+        "id": 1,
+        "name": "Goblet Squats",
+        "set": 3,
+        "rep": 10,
+        "weight": 80
+    }
+]
