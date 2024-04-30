@@ -3,3 +3,5 @@ uvicorn
 sqlalchemy
 alembic
 psycopg2
+sqlmodel
+python-decouple
