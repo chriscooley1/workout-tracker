@@ -1,9 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlmodel import Session, select
+from datetime import datetime
 
 from database import get_db
-# from models import Course, Instructor, Student
-from models import Equipment, MuscleGroup, Workout
+from models import Equipment, MuscleGroup, Workout, Progress, Goal
 
 
 app = FastAPI()
@@ -34,6 +34,15 @@ async def get_workout_equipment(workout_id: int, db: Session = Depends(get_db)) 
     statement = select(Workout).where(Workout.workout_id == workout_id)
     workout = db.exec(statement).first()
     return workout.equipment
+
+@app.get("/workouts/{workout_id}/progress")
+async def get_workout_progress(workout_id: int, db: Session = Depends(get_db)) -> float:
+    return calculate_progress(workout_id, db)
+
+@app.get("/goals/{goal_id}")
+async def get_goal(goal_id: int, db: Session = Depends(get_db)) -> Goal:
+    statement = select(Goal).where(Goal.goal_id == goal_id)
+    return db.exec(statement).first()
 
 ### POST ###
 
@@ -73,6 +82,62 @@ async def add_equipment_to_workout(workout_id: int, equipment_id: int, db: Sessi
 
     workout.equipment.append(equip)
     db.commit()
+
+@app.post("/goals")
+async def create_goal(goal: Goal, db: Session = Depends(get_db)) -> Goal:
+    return set_goal(goal.user_id, goal.goal_description, goal.target_date, db)
+
+@app.post("/workouts/{workout_id}/progress")
+async def add_workout_progress(workout_id: int, progress: Progress, db: Session = Depends(get_db)) -> None:
+    progress.workout_id = workout_id
+    db.add(progress)
+    db.commit()
+
+
+### Business Logic ###
+
+def set_goal(user_id: int, goal_description: str, target_date: str, db: Session) -> Goal:
+    goal = Goal(user_id=user_id, goal_description=goal_description, target_date=target_date)
+    db.add(goal)
+    db.commit()
+    return goal
+
+def calculate_progress(workout_id: int, db: Session) -> float:
+    statement = select(Progress).where(Progress.workout_id == workout_id)
+    progress_list = db.exec(statement).all()
+
+    total_progress = 0
+    num_progress_entries = 0
+
+    for progress in progress_list:
+        # Implement your logic to calculate progress based on the progress data
+        # For example, you can calculate average progress based on reps, sets, weight lifted, etc.
+        total_progress += progress.reps * progress.sets  # For simplicity, just multiplying reps and sets here
+        num_progress_entries += 1
+
+    if num_progress_entries == 0:
+        return 0
+    else:
+        return total_progress / num_progress_entries
+
+def set_goal_achieved(user_id: int, goal_id: int, db: Session) -> bool:
+    statement = select(Progress).where(Progress.workout_id == goal_id)
+    progress_list = db.exec(statement).all()
+
+    # Implement logic to check if the goal has been achieved based on the progress made
+    # For example, compare progress against the goal target
+    # If goal achieved, return True; otherwise, return False
+    return True  # Placeholder
+
+def handle_skip_workout(workout_id: int, punishment_duration: int, db: Session) -> None:
+    statement = select(Progress).where(Progress.workout_id == workout_id)
+    progress = db.exec(statement).first()
+
+    # Implement your logic to handle skip workouts and calculate punishments
+    # For example, update progress and apply punishment duration
+    progress.name = "Skipped"
+    db.commit()
+
 
 
 ### GET ###
