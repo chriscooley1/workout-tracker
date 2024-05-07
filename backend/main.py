@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from database import get_db
 # from models import Course, Instructor, Student
-from models import Equipment, MuscleGroup, Workout, WorkoutEquipmentLink, WorkoutMuscleGroupLink
+from models import Equipment, MuscleGroup, Workout
 
 
 app = FastAPI()
@@ -25,23 +25,15 @@ async def get_muscle_groups(db: Session = Depends(get_db)) -> list[MuscleGroup]:
 
 @app.get("/workouts/{workout_id}/muscle_groups")
 async def get_workout_muscle_groups(workout_id: int, db: Session = Depends(get_db)) -> list[MuscleGroup]:
-    statement = select(WorkoutMuscleGroupLink).where(WorkoutMuscleGroupLink.workout_id == workout_id)
-    result = db.exec(statement).all()
-    if not result:
-        raise HTTPException(status_code=404, detail="Workout not found")
-    group_ids = [link.group_id for link in result]
-    statement = select(MuscleGroup).where(MuscleGroup.group_id.in_(group_ids))
-    return db.exec(statement).all()
+    statement = select(Workout).where(Workout.workout_id == workout_id)
+    workout = db.exec(statement).first()
+    return workout.muscle_groups
 
 @app.get("/workouts/{workout_id}/equipment")
 async def get_workout_equipment(workout_id: int, db: Session = Depends(get_db)) -> list[Equipment]:
-    statement = select(WorkoutEquipmentLink).where(WorkoutEquipmentLink.workout_id == workout_id)
-    result = db.exec(statement).all()
-    if not result:
-        raise HTTPException(status_code=404, detail="Workout not found")
-    equipment_ids = [link.equipment_id for link in result]
-    statement = select(Equipment).where(Equipment.equipment_id.in_(equipment_ids))
-    return db.exec(statement).all()
+    statement = select(Workout).where(Workout.workout_id == workout_id)
+    workout = db.exec(statement).first()
+    return workout.equipment
 
 ### POST ###
 
@@ -62,14 +54,24 @@ async def create_muscle_group(group: MuscleGroup, db: Session = Depends(get_db))
 
 @app.post("/workouts/{workout_id}/muscle_groups/{group_id}")
 async def add_muscle_group_to_workout(workout_id: int, group_id: int, db: Session = Depends(get_db)) -> None:
-    link = WorkoutMuscleGroupLink(workout_id=workout_id, group_id=group_id)
-    db.add(link)
+    statement = select(MuscleGroup).where(MuscleGroup.group_id == group_id)
+    muscle_group = db.exec(statement).first()
+
+    statement = select(Workout).where(Workout.workout_id == workout_id)
+    workout = db.exec(statement).first()
+
+    workout.muscle_groups.append(muscle_group)
     db.commit()
 
 @app.post("/workouts/{workout_id}/equipment/{equipment_id}")
 async def add_equipment_to_workout(workout_id: int, equipment_id: int, db: Session = Depends(get_db)) -> None:
-    link = WorkoutEquipmentLink(workout_id=workout_id, equipment_id=equipment_id)
-    db.add(link)
+    statement = select(Equipment).where(Equipment.equipment_id == equipment_id)
+    equip = db.exec(statement).first()
+
+    statement = select(Workout).where(Workout.workout_id == workout_id)
+    workout = db.exec(statement).first()
+
+    workout.equipment.append(equip)
     db.commit()
 
 
