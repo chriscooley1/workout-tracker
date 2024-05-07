@@ -1,7 +1,6 @@
-fastapi
-uvicorn
-sqlalchemy
 alembic
+fastapi
 psycopg2
-sqlmodel
 python-decouple
+sqlmodel
+uvicorn
