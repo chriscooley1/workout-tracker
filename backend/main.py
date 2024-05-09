@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from datetime import datetime
 
 from database import get_db
-from models import Equipment, MuscleGroup, Workout, Progress, Goal
+from models import Equipment, MuscleGroup, Workout, Progress, Goal, User
 
 
 app = FastAPI()
@@ -24,16 +24,20 @@ async def get_muscle_groups(db: Session = Depends(get_db)) -> list[MuscleGroup]:
     return db.exec(select(MuscleGroup)).all()
 
 @app.get("/workouts/{workout_id}/muscle_groups")
-async def get_workout_muscle_groups(workout_id: int, db: Session = Depends(get_db)) -> list[MuscleGroup]:
-    statement = select(Workout).where(Workout.workout_id == workout_id)
-    workout = db.exec(statement).first()
-    return workout.muscle_groups
+async def get_workout_muscle_groups(workout_id: int, db: Session = Depends(get_db)):
+    workout = db.query(Workout).filter(Workout.workout_id == workout_id).first()
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    muscle_groups = workout.workout_muscle_groups
+    return muscle_groups
 
 @app.get("/workouts/{workout_id}/equipment")
-async def get_workout_equipment(workout_id: int, db: Session = Depends(get_db)) -> list[Equipment]:
-    statement = select(Workout).where(Workout.workout_id == workout_id)
-    workout = db.exec(statement).first()
-    return workout.equipment
+async def get_workout_equipment(workout_id: int, db: Session = Depends(get_db)):
+    workout = db.query(Workout).filter(Workout.workout_id == workout_id).first()
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    equipment = workout.workout_equipment_groups
+    return equipment
 
 @app.get("/workouts/{workout_id}/progress")
 async def get_workout_progress(workout_id: int, db: Session = Depends(get_db)) -> float:
@@ -103,88 +107,92 @@ def set_goal(user_id: int, goal_description: str, target_date: str, db: Session)
     return goal
 
 def calculate_progress(workout_id: int, db: Session) -> float:
+    # Retrieve all progress entries related to the workout
+    statement = select(Progress).where(Progress.workout_id == workout_id)
+    progress_list = db.exec(statement).all()
+
+    total_reps = 0
+    total_sets = 0
+    num_entries = len(progress_list)
+
+    # Calculate the total reps and sets
+    for progress in progress_list:
+        total_reps += progress.reps
+        total_sets += progress.sets
+
+    # Calculate the average reps and sets
+    average_reps = total_reps / num_entries if num_entries > 0 else 0
+    average_sets = total_sets / num_entries if num_entries > 0 else 0
+
+    # You can calculate progress based on other metrics as needed
+    # For example, you can calculate progress based on weight lifted, duration, etc.
+
+    # For simplicity, let's calculate progress as the average of reps and sets
+    progress = (average_reps + average_sets) / 2
+
+    return progress
+
+def set_goal_achieved(user_id: int, goal_id: int, db: Session) -> bool:
+    # Retrieve the goal from the database
+    goal = db.get(Goal, goal_id)
+    if not goal:
+        return False  # Goal not found
+
+    # Ensure that the goal belongs to the specified user
+    if goal.user_id != user_id:
+        return False  # Goal does not belong to the user
+
+    # Retrieve all progress entries related to the goal
+    statement = select(Progress).where(Progress.workout_id == goal_id)
+    progress_list = db.exec(statement).all()
+
+    # Calculate the total progress made towards the goal
+    total_progress = 0
+    for progress in progress_list:
+        # Implement your logic to calculate progress towards the goal
+        # For example, you can sum up reps, sets, or any other relevant metric
+        total_progress += progress.reps * progress.sets
+
+    # Check if the total progress meets or exceeds the goal target
+    if total_progress >= goal.target:
+        return True  # Goal achieved
+    else:
+        return False  # Goal not achieved
+    
+def calculate_progress_towards_goal(workout_id: int, goal_id: int, db: Session) -> float:
+    # Retrieve all progress entries related to the workout
     statement = select(Progress).where(Progress.workout_id == workout_id)
     progress_list = db.exec(statement).all()
 
     total_progress = 0
-    num_progress_entries = 0
 
+    # Calculate the total progress based on relevant metrics (e.g., reps, sets, weight lifted, etc.)
     for progress in progress_list:
-        # Implement your logic to calculate progress based on the progress data
-        # For example, you can calculate average progress based on reps, sets, weight lifted, etc.
         total_progress += progress.reps * progress.sets  # For simplicity, just multiplying reps and sets here
-        num_progress_entries += 1
 
-    if num_progress_entries == 0:
-        return 0
-    else:
-        return total_progress / num_progress_entries
+    # Retrieve the goal from the database
+    goal_statement = select(Goal).where(Goal.goal_id == goal_id)
+    goal = db.exec(goal_statement).first()
 
-def set_goal_achieved(user_id: int, goal_id: int, db: Session) -> bool:
-    statement = select(Progress).where(Progress.workout_id == goal_id)
-    progress_list = db.exec(statement).all()
+    # Compare the accumulated progress with the target set in the goal
+    progress_towards_goal = (total_progress / goal.target) * 100  # Assuming the target is in the same units as progress
 
-    # Implement logic to check if the goal has been achieved based on the progress made
-    # For example, compare progress against the goal target
-    # If goal achieved, return True; otherwise, return False
-    return True  # Placeholder
+    return progress_towards_goal
 
 def handle_skip_workout(workout_id: int, punishment_duration: int, db: Session) -> None:
+    # Retrieve the progress entry related to the skipped workout
     statement = select(Progress).where(Progress.workout_id == workout_id)
     progress = db.exec(statement).first()
 
-    # Implement your logic to handle skip workouts and calculate punishments
-    # For example, update progress and apply punishment duration
-    progress.name = "Skipped"
-    db.commit()
-
-
-
-### GET ###
-
-# @app.get("/students")
-# async def get_students(db: Session = Depends(get_db)) -> list[Student]:
-#     return db.exec(select(Student)).all()
-
-# @app.get("/instructors")
-# async def get_instructors(db: Session = Depends(get_db)) -> list[Instructor]:
-#     return db.exec(select(Instructor)).all()
-
-# @app.get("/courses")
-# async def get_courses(db: Session = Depends(get_db)) -> list[Course]:
-#     return db.exec(select(Course)).all()
-
-# @app.get("/courses/{course_id}/students")
-# async def get_course_student_list(course_id: int, db: Session = Depends(get_db)) -> list[Student]:
-#     statement = select(Course).where(Course.course_id == course_id)
-#     course = db.exec(statement).first()
-#     return course.students
-
-
-# ### POST ###
-
-# @app.post("/students")
-# async def create_student(student: Student, db: Session = Depends(get_db)) -> None:
-#     db.add(student)
-#     db.commit()
-
-# @app.post("/instructors")
-# async def create_instructor(instructor: Instructor, db: Session = Depends(get_db)) -> None:
-#     db.add(instructor)
-#     db.commit()
-
-# @app.post("/courses")
-# async def create_course(course: Course, db: Session = Depends(get_db)) -> None:
-#     db.add(course)
-#     db.commit()
-
-# @app.post("/courses/{course_id}/students/{student_id}")
-# async def add_student_to_course(course_id: int, student_id: int, db: Session = Depends(get_db)) -> None:
-#     statement = select(Student).where(Student.student_id == student_id)
-#     student = db.exec(statement).first()
-
-#     statement = select(Course).where(Course.course_id == course_id)
-#     course = db.exec(statement).first()
-
-#     course.students.append(student)
-#     db.commit()
+    if progress:
+        # Update the progress entry to indicate that the workout was skipped
+        progress.name = "Skipped"
+        
+        # Apply punishment duration (e.g., subtract from duration_minutes)
+        progress.duration_minutes -= punishment_duration
+        
+        # Commit the changes to the database
+        db.commit()
+    else:
+        # Handle the case where no progress entry is found for the workout
+        raise HTTPException(status_code=404, detail="Progress entry not found for the specified workout")
