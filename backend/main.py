@@ -196,3 +196,27 @@ def handle_skip_workout(workout_id: int, punishment_duration: int, db: Session) 
     else:
         # Handle the case where no progress entry is found for the workout
         raise HTTPException(status_code=404, detail="Progress entry not found for the specified workout")
+
+
+
+
+
+# from sqlalchemy.orm import relationship, selectinload
+
+
+# @app.get("/workouts/{workout_id}/muscle_groups")
+# async def get_workout_muscle_groups(workout_id: int, db: Session = Depends(get_db)):
+#     # Query for the Workout object and load the workout_muscle_groups relationship
+#     workout = db.query(Workout).filter(Workout.workout_id == workout_id).options(selectinload(Workout.workout_muscle_groups)).first()
+#     if workout is None:
+#         raise HTTPException(status_code=404, detail="Workout not found")
+#     muscle_groups = Workout.workout_muscle_groups
+#     return muscle_groups
+
+# @app.get("/workouts/{workout_id}/equipment")
+# async def get_workout_equipment(workout_id: int, db: Session = Depends(get_db)):
+#     workout = db.query(Workout).filter(Workout.workout_id == workout_id).options(selectinload(Workout.workout_equipment_groups)).first()
+#     if workout is None:
+#         raise HTTPException(status_code=404, detail="Workout not found")
+#     equipment = Workout.workout_equipment_groups
+#     return equipment
