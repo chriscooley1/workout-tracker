@@ -1,124 +1,47 @@
-from sqlalchemy.orm import relationship
-from sqlmodel import Field, Relationship, SQLModel
-from datetime import datetime
+from sqlmodel import Field, SQLModel, Relationship
 
 class User(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
+    __tablename__ = "users"
+    user_id: int = Field(default=None, primary_key=True)
     username: str
     email: str
     password: str
-    created_at: datetime = Field(default=datetime.utcnow)
-    goals: list["Goal"] = Relationship(back_populates="user")
+    goals: list['Goal'] = Relationship(back_populates="user")
 
 class Goal(SQLModel, table=True):
+    __tablename__ = "goals"
     goal_id: int = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")  # Define foreign key constraint
+    name: str
     goal_description: str
-    target_date: str
+    user_id: int = Field(foreign_key="users.user_id")
+
     user: User = Relationship(back_populates="goals")
 
 class MuscleGroup(SQLModel, table=True):
-    group_id: int | None = Field(default=None, primary_key=True)
+    group_id: int = Field(default=None, primary_key=True)
     name: str
 
 class Equipment(SQLModel, table=True):
-    equipment_id: int | None = Field(default=None, primary_key=True)
+    equipment_id: int = Field(default=None, primary_key=True)
     name: str
+    description: str
 
 class Workout(SQLModel, table=True):
-    workout_id: int | None = Field(default=None, primary_key=True)
+    __tablename__ = "workouts"
+    workout_id: int = Field(default=None, primary_key=True)
     name: str
-    reps: int
-    sets: int
-
-# Define the relationship between Workout and MuscleGroup
-workout_muscle_groups = relationship(
-    "MuscleGroup",
-    secondary="workoutmusclegrouplink",
-    primaryjoin="Workout.workout_id == WorkoutMuscleGroupLink.workout_id",
-    secondaryjoin="MuscleGroup.group_id == WorkoutMuscleGroupLink.group_id",
-    back_populates="workouts"
-)
-
-workout_equipment_groups = relationship(
-    "MuscleGroup",
-    secondary="workoutequipmentlink",
-    primaryjoin="Workout.workout_id == WorkoutEquipmentLink.workout_id",
-    secondaryjoin="MuscleGroup.group_id == WorkoutEquipmentLink.group_id",
-    back_populates="workouts"
-)
+    description: str
+    muscle_group_id: int = Field(foreign_key="muscle_groups.group_id")
+    equipment_id: int = Field(foreign_key="equipment.equipment_id")
 
 class Progress(SQLModel, table=True):
+    __tablename__ = "progress"
     progress_id: int = Field(default=None, primary_key=True)
-    workout_id: int = Field(foreign_key="workout.workout_id")
+    user_id: int = Field(foreign_key="users.user_id")
+    workout_id: int = Field(foreign_key="workouts.workout_id")
+    date_completed: str
+
+class IntensityLevel(SQLModel, table=True):
+    intensity_id: int = Field(default=None, primary_key=True)
     name: str
-    reps: int
-    sets: int
-    weight_lifted: float
-    duration_minutes: int
-    # intensity_level_id: int = Field(foreign_key="intensity_level.level_id")
-
-class WorkoutMuscleGroupLink(SQLModel, table=True):
-    workout_id: int = Field(foreign_key="workout.workout_id", primary_key=True)
-    group_id: int = Field(foreign_key="muscle_group.group_id", primary_key=True)
-
-class WorkoutEquipmentLink(SQLModel, table=True):
-    workout_id: int = Field(foreign_key="workout.workout_id", primary_key=True)
-    equipment_id: int = Field(foreign_key="equipment.equipment_id", primary_key=True)
-
-
-
-
-# class IntensityLevel(SQLModel, table=True):
-#     level_id: int = Field(default=None, primary_key=True)
-#     name: str
-#     workouts: list["Workout"] = Relationship(back_populates="intensity_level")
-
-# class Workout(SQLModel, table=True):
-#     workout_id: int | None = Field(default=None, primary_key=True)
-#     name: str
-#     reps: int
-#     sets: int
-#     # intensity_level_id: int = Field(foreign_key="intensity_level.level_id")
-#     # intensity_level: IntensityLevel = Relationship(back_populates="workouts")
-
-
-
-
-
-
-
-
-# from typing import ClassVar
-
-
-# class Workout(SQLModel, table=True):
-#     workout_id: int = Field(default=None, primary_key=True)
-#     name: str
-#     reps: int
-#     sets: int
-
-#     workout_muscle_groups: ClassVar = relationship(
-#         "MuscleGroup",
-#         secondary="workoutmusclegrouplink",
-#         primaryjoin="Workout.workout_id == WorkoutMuscleGroupLink.workout_id",
-#         secondaryjoin="MuscleGroup.group_id == WorkoutMuscleGroupLink.group_id",
-#         back_populates="workouts"
-#     )
-
-#     workout_equipment_groups: ClassVar = relationship(
-#         "Equipment",
-#         secondary="workoutequipmentlink",
-#         primaryjoin="Workout.workout_id == WorkoutEquipmentLink.workout_id",
-#         secondaryjoin="Equipment.equipment_id == WorkoutEquipmentLink.equipment_id",
-#         back_populates="workouts"
-#     )
-
-
-# class WorkoutMuscleGroupLink(SQLModel, table=True):
-#     workout_id: int = Field(foreign_key="workout.workout_id", primary_key=True)
-#     group_id: int = Field(foreign_key="muscle_group.group_id", primary_key=True)
-
-# class WorkoutEquipmentLink(SQLModel, table=True):
-#     workout_id: int = Field(foreign_key="workout.workout_id", primary_key=True)
-#     equipment_id: int = Field(foreign_key="equipment.equipment_id", primary_key=True)
+    description: str
