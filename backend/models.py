@@ -6,7 +6,7 @@ class User(SQLModel, table=True):
     username: str
     email: str
     password: str
-    goals: list['Goal'] = Relationship(back_populates="user")
+    goals: list["Goal"] = Relationship(back_populates="user")
 
 class Goal(SQLModel, table=True):
     __tablename__ = "goals"
