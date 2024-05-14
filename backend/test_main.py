@@ -1,105 +1,81 @@
+import unittest
+from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from sqlmodel import Session
 from main import app
-from models import User, Goal, MuscleGroup, Equipment, Workout, Progress, IntensityLevel
-from database import get_db
-import sys
-
-
-# Replace this with your PostgreSQL test database URL
-SQLALCHEMY_TEST_DATABASE_URL = "postgresql://username:password@localhost/test_database"
-
-# Creating a test database engine
-engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL)
-
-# Creating a test database session
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Override get_db function to use the test session
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Override get_db function to use the test session for tests
-def override_get_test_db():
-    test_db = TestingSessionLocal()
-    try:
-        yield test_db
-    finally:
-        test_db.close()
-
-# Apply the appropriate override depending on whether it's a test or not
-if "pytest" in sys.modules:
-    app.dependency_overrides[get_db] = override_get_test_db
-else:
-    app.dependency_overrides[get_db] = override_get_db
+from models import User
 
 client = TestClient(app)
 
-# Create tables in the test database
-def create_test_tables():
-    with engine.connect() as connection:
-        User.__table__.create(connection)
-        Goal.__table__.create(connection)
-        MuscleGroup.__table__.create(connection)
-        Equipment.__table__.create(connection)
-        Workout.__table__.create(connection)
-        Progress.__table__.create(connection)
-        IntensityLevel.__table__.create(connection)
+class TestUserEndpoints(unittest.TestCase):
 
-# Cleanup function to delete test data from tables
-def delete_test_data():
-    with engine.connect() as connection:
-        connection.execute('DELETE FROM users')
-        connection.execute('DELETE FROM goals')
-        connection.execute('DELETE FROM muscle_groups')
-        connection.execute('DELETE FROM equipment')
-        connection.execute('DELETE FROM workouts')
-        connection.execute('DELETE FROM progress')
-        connection.execute('DELETE FROM intensity_levels')
+    @patch('main.get_db')
+    def test_get_users(self, mock_get_db):
+        # Mock the database session and the query
+        mock_db = MagicMock(spec=Session)
+        mock_get_db.return_value = mock_db
+        mock_users = []
+        mock_db.exec.return_value.all.return_value = mock_users
 
-# Fixture to run setup and cleanup before and after tests
-@pytest.fixture(autouse=True)
-def setup_and_cleanup():
-    create_test_tables()
-    yield
-    delete_test_data()
+        response = client.get("/user")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
 
-# Sample data for testing
-sample_user = {
-    "username": "testuser",
-    "email": "test@example.com",
-    "password": "password123"
-}
+    @patch('main.get_db')
+    def test_create_user(self, mock_get_db):
+        # Mock the database session
+        mock_db = MagicMock(spec=Session)
+        mock_get_db.return_value = mock_db
 
-sample_goal = {
-    "name": "Get Fit",
-    "goal_description": "Achieve overall fitness"
-}
+        user_data = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "password123"
+        }
+        response = client.post("/user", json=user_data)
+        self.assertEqual(response.status_code, 200)
 
-# Unit tests
-def test_create_user():
-    response = client.post("/user", json=sample_user)
-    assert response.status_code == 200
+        # Ensure the user was added to the database
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
 
-def test_get_users():
-    response = client.get("/user")
-    assert response.status_code == 200
-    assert len(response.json()) > 0
+    @patch('main.get_db')
+    def test_update_user(self, mock_get_db):
+        # Mock the database session and the get method
+        mock_db = MagicMock(spec=Session)
+        mock_get_db.return_value = mock_db
+        mock_user = User(user_id=1, username="testuser", email="test@example.com", password="password123")
+        mock_db.get.return_value = mock_user
 
-def test_create_goal():
-    response = client.post("/goal", json=sample_goal)
-    assert response.status_code == 200
+        user_data = {
+            "username": "updateduser",
+            "email": "updated@example.com",
+            "password": "newpassword123"
+        }
+        response = client.put("/user/1", json=user_data)
+        self.assertEqual(response.status_code, 200)
 
-def test_get_goals():
-    response = client.get("/goal")
-    assert response.status_code == 200
-    assert len(response.json()) > 0
+        # Ensure the user was updated in the database
+        self.assertEqual(mock_user.username, "updateduser")
+        self.assertEqual(mock_user.email, "updated@example.com")
+        self.assertEqual(mock_user.password, "newpassword123")
+        mock_db.commit.assert_called_once()
 
-# Add more tests for other endpoints as needed
+    @patch('main.get_db')
+    def test_delete_user(self, mock_get_db):
+        # Mock the database session and the get method
+        mock_db = MagicMock(spec=Session)
+        mock_get_db.return_value = mock_db
+        mock_user = User(user_id=1, username="testuser", email="test@example.com", password="password123")
+        mock_db.get.return_value = mock_user
+
+        response = client.delete("/user/1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "User deleted successfully"})
+
+        # Ensure the user was deleted from the database
+        mock_db.delete.assert_called_once_with(mock_user)
+        mock_db.commit.assert_called_once()
+
+if __name__ == "__main__":
+    unittest.main()
