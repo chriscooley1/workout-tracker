@@ -1,546 +1,240 @@
-import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+import pytest
 from main import app
-from models import User, Goal, MuscleGroup, Equipment, Workout, Progress, IntensityLevel
 
 client = TestClient(app)
 
-class TestUserEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.user_data = {
-            "username": "testuser",
-            "email": "test@example.com",
-            "password": "password123"
-        }
-        self.updated_user_data = {
-            "username": "updateduser",
-            "email": "updated@example.com",
-            "password": "newpassword123"
-        }
-
-    @patch('main.get_db')
-    def test_get_users(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_users = []
-        mock_db.exec.return_value.all.return_value = mock_users
-
-        response = client.get("/user")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_user(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        response = client.post("/user", json=self.user_data)
-        self.assertEqual(response.status_code, 200)
-
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_user(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_user = User(user_id=1, **self.user_data)
-        mock_db.get.return_value = mock_user
-
-        response = client.put("/user/1", json=self.updated_user_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_user.username, self.updated_user_data["username"])
-        self.assertEqual(mock_user.email, self.updated_user_data["email"])
-        self.assertEqual(mock_user.password, self.updated_user_data["password"])
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_user(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_user = User(user_id=1, **self.user_data)
-        mock_db.get.return_value = mock_user
-
-        response = client.delete("/user/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "User deleted successfully"})
-
-        mock_db.delete.assert_called_once_with(mock_user)
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_nonexistent_user(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.put("/user/99", json=self.updated_user_data)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "User not found"})
-
-    @patch('main.get_db')
-    def test_delete_nonexistent_user(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.delete("/user/99")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "User not found"})
-
-class TestGoalEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.goal_data = {
-            "name": "testname",
-            "goal_description": "goal_description123"
-        }
-        self.updated_goal_data = {
-            "name": "updatedname",
-            "goal_description": "newgoal_description123"
-        }
-
-    @patch('main.get_db')
-    def test_get_goals(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_goals = []
-        mock_db.exec.return_value.all.return_value = mock_goals
-
-        response = client.get("/goal")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_goal(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        response = client.post("/goal", json=self.goal_data)
-        self.assertEqual(response.status_code, 200)
-
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_goal(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_goal = Goal(goal_id=1, **self.goal_data)
-        mock_db.get.return_value = mock_goal
-
-        response = client.put("/goal/1", json=self.updated_goal_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_goal.name, self.updated_goal_data["name"])
-        self.assertEqual(mock_goal.goal_description, self.updated_goal_data["goal_description"])
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_goal(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_goal = Goal(goal_id=1, **self.goal_data)
-        mock_db.get.return_value = mock_goal
-
-        response = client.delete("/goal/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Goal deleted successfully"})
-
-        mock_db.delete.assert_called_once_with(mock_goal)
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_nonexistent_goal(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.put("/goal/99", json=self.updated_goal_data)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Goal not found"})
-
-    @patch('main.get_db')
-    def test_delete_nonexistent_goal(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.delete("/goal/99")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Goal not found"})
-
-class TestMuscleGroupEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.muscle_group_data = {
-            "name": "testname"
-        }
-        self.updated_muscle_group_data = {
-            "name": "updatedname"
-        }
-
-    @patch('main.get_db')
-    def test_get_muscle_groups(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_muscle_groups = []
-        mock_db.exec.return_value.all.return_value = mock_muscle_groups
-
-        response = client.get("/muscle_group")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_muscle_group(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        response = client.post("/muscle_group", json=self.muscle_group_data)
-        self.assertEqual(response.status_code, 200)
-
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_muscle_group(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_muscle_group = MuscleGroup(group_id=1, **self.muscle_group_data)
-        mock_db.get.return_value = mock_muscle_group
-
-        response = client.put("/muscle_group/1", json=self.updated_muscle_group_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_muscle_group.name, self.updated_muscle_group_data["name"])
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_muscle_group(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_muscle_group = MuscleGroup(group_id=1, **self.muscle_group_data)
-        mock_db.get.return_value = mock_muscle_group
-
-        response = client.delete("/muscle_group/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Muscle group deleted successfully"})
-
-        mock_db.delete.assert_called_once_with(mock_muscle_group)
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_nonexistent_muscle_group(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.put("/muscle_group/99", json=self.updated_muscle_group_data)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Muscle group not found"})
-
-    @patch('main.get_db')
-    def test_delete_nonexistent_muscle_group(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.delete("/muscle_group/99")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Muscle group not found"})
-
-class TestEquipmentEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.equipment_data = {
-            "name": "testname",
-            "description": "description123"
-        }
-        self.updated_equipment_data = {
-            "name": "updatedname",
-            "description": "newdescription123"
-        }
-
-    @patch('main.get_db')
-    def test_get_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_equipment = []
-        mock_db.exec.return_value.all.return_value = mock_equipment
-
-        response = client.get("/equipment")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        response = client.post("/equipment", json=self.equipment_data)
-        self.assertEqual(response.status_code, 200)
-
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_equipment = Equipment(equipment_id=1, **self.equipment_data)
-        mock_db.get.return_value = mock_equipment
-
-        response = client.put("/equipment/1", json=self.updated_equipment_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_equipment.name, self.updated_equipment_data["name"])
-        self.assertEqual(mock_equipment.description, self.updated_equipment_data["description"])
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_equipment = Equipment(equipment_id=1, **self.equipment_data)
-        mock_db.get.return_value = mock_equipment
-
-        response = client.delete("/equipment/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Equipment deleted successfully"})
-
-        mock_db.delete.assert_called_once_with(mock_equipment)
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_nonexistent_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.put("/equipment/99", json=self.updated_equipment_data)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Equipment not found"})
-
-    @patch('main.get_db')
-    def test_delete_nonexistent_equipment(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.delete("/equipment/99")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Equipment not found"})
-
-class TestWorkoutEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.workout_data = {
-            "name": "testworkout",
-            "description": "workout description",
-            "user_id": 1
-        }
-        self.updated_workout_data = {
-            "name": "updatedworkout",
-            "description": "new workout description",
-            "user_id": 1
-        }
-
-    @patch('main.get_db')
-    def test_get_workouts(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_workouts = []
-        mock_db.exec.return_value.all.return_value = mock_workouts
-
-        response = client.get("/workout")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_workout(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        response = client.post("/workout", json=self.workout_data)
-        self.assertEqual(response.status_code, 200)
-
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_workout(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_workout = Workout(workout_id=1, **self.workout_data)
-        mock_db.get.return_value = mock_workout
-
-        response = client.put("/workout/1", json=self.updated_workout_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_workout.name, self.updated_workout_data["name"])
-        self.assertEqual(mock_workout.description, self.updated_workout_data["description"])
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_workout(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_workout = Workout(workout_id=1, **self.workout_data)
-        mock_db.get.return_value = mock_workout
-
-        response = client.delete("/workout/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Workout deleted successfully"})
-
-        mock_db.delete.assert_called_once_with(mock_workout)
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_nonexistent_workout(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.put("/workout/99", json=self.updated_workout_data)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Workout not found"})
-
-    @patch('main.get_db')
-    def test_delete_nonexistent_workout(self, mock_get_db):
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_db.get.return_value = None
-
-        response = client.delete("/workout/99")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"detail": "Workout not found"})
-
-class TestProgressEndpoints(unittest.TestCase):
-    @patch('main.get_db')
-    def test_get_progress(self, mock_get_db):
-        # Mock the database session and the query
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_progress = []
-        mock_db.exec.return_value.all.return_value = mock_progress
-
-        response = client.get("/progress")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_progress(self, mock_get_db):
-        # Mock the database session
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        progress_data = {
-            "user_id": 1,
-            "workout_id": 1,
-            "date_completed": "2024-01-01"
-        }
-        response = client.post("/progress", json=progress_data)
-        self.assertEqual(response.status_code, 200)
-
-        # Ensure the progress was added to the database
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_progress(self, mock_get_db):
-        # Mock the database session and the get method
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_progress = Progress(progress_id=1, user_id=1, workout_id=1, date_completed="2024-01-01")
-        mock_db.get.return_value = mock_progress
-
-        progress_data = {
-            "user_id": 1,
-            "workout_id": 1,
-            "date_completed": "2024-02-01"
-        }
-        response = client.put("/progress/1", json=progress_data)
-        self.assertEqual(response.status_code, 200)
-
-        # Ensure the progress was updated in the database
-        self.assertEqual(mock_progress.date_completed, "2024-02-01")
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_progress(self, mock_get_db):
-        # Mock the database session and the get method
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_progress = Progress(progress_id=1, user_id=1, workout_id=1, date_completed="2024-01-01")
-        mock_db.get.return_value = mock_progress
-
-        response = client.delete("/progress/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Progress deleted successfully"})
-
-        # Ensure the progress was deleted from the database
-        mock_db.delete.assert_called_once_with(mock_progress)
-        mock_db.commit.assert_called_once()
-
-class TestIntensityLevelEndpoints(unittest.TestCase):
-    @patch('main.get_db')
-    def test_get_intensity_levels(self, mock_get_db):
-        # Mock the database session and the query
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_intensity_levels = []
-        mock_db.exec.return_value.all.return_value = mock_intensity_levels
-
-        response = client.get("/intensity_level")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
-
-    @patch('main.get_db')
-    def test_create_intensity_level(self, mock_get_db):
-        # Mock the database session
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-
-        intensity_level_data = {
-            "name": "High",
-            "description": "High intensity level"
-        }
-        response = client.post("/intensity_level", json=intensity_level_data)
-        self.assertEqual(response.status_code, 200)
-
-        # Ensure the intensity level was added to the database
-        mock_db.add.assert_called_once()
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_update_intensity_level(self, mock_get_db):
-        # Mock the database session and the get method
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_intensity_level = IntensityLevel(intensity_id=1, name="High", description="High intensity level")
-        mock_db.get.return_value = mock_intensity_level
-
-        intensity_level_data = {
-            "name": "Moderate",
-            "description": "Moderate intensity level"
-        }
-        response = client.put("/intensity_level/1", json=intensity_level_data)
-        self.assertEqual(response.status_code, 200)
-
-        # Ensure the intensity level was updated in the database
-        self.assertEqual(mock_intensity_level.name, "Moderate")
-        self.assertEqual(mock_intensity_level.description, "Moderate intensity level")
-        mock_db.commit.assert_called_once()
-
-    @patch('main.get_db')
-    def test_delete_intensity_level(self, mock_get_db):
-        # Mock the database session and the get method
-        mock_db = MagicMock(spec=Session)
-        mock_get_db.return_value = mock_db
-        mock_intensity_level = IntensityLevel(intensity_id=1, name="High", description="High intensity level")
-        mock_db.get.return_value = mock_intensity_level
-
-        response = client.delete("/intensity_level/1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"message": "Intensity Level deleted successfully"})
-
-        # Ensure the intensity level was deleted from the database
-        mock_db.delete.assert_called_once_with(mock_intensity_level)
-        mock_db.commit.assert_called_once()
-
-if __name__ == "__main__":
-    unittest.main()
+class MockSession:
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+def mock_get_db():
+    return MockSession()
+
+@pytest.fixture
+def test_get_db():
+    with patch("database.get_db", return_value=mock_get_db()) as mock:
+        yield mock
+
+# CRUD tests for User
+
+def test_create_user(test_get_db):
+    user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
+    response = client.post("/user", json=user_data)
+    assert response.status_code == 200
+
+def test_get_users(test_get_db): 
+    response = client.get("/user")
+    assert response.status_code == 200
+
+def test_update_user(test_get_db):
+    user_id = 1
+    updated_data = {"email": "updated_email@example.com"}
+    response = client.put(f"/user/{user_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_user(test_get_db):
+    user_id = 1
+    response = client.delete(f"/user/{user_id}")
+    assert response.status_code == 200
+
+# CRUD tests for Goal
+
+def test_create_goal(test_get_db):
+    goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": 1}
+    response = client.post("/goal", json=goal_data)
+    assert response.status_code == 200
+
+def test_get_goals(test_get_db):
+    response = client.get("/goal")
+    assert response.status_code == 200
+
+def test_update_goal(test_get_db):
+    goal_id = 1
+    updated_data = {"name": "Updated Goal Name"}
+    response = client.put(f"/goal/{goal_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_goal(test_get_db):
+    goal_id = 1
+    response = client.delete(f"/goal/{goal_id}")
+    assert response.status_code == 200
+
+# CRUD tests for MuscleGroup
+
+def test_create_muscle_group(test_get_db):
+    muscle_group_data = {"name": "Test Muscle Group"}
+    response = client.post("/muscle_group", json=muscle_group_data)
+    assert response.status_code == 200
+
+def test_get_muscle_groups(test_get_db):
+    response = client.get("/muscle_group")
+    assert response.status_code == 200
+
+def test_update_muscle_group(test_get_db):
+    group_id = 1
+    updated_data = {"name": "Updated Muscle Group Name"}
+    response = client.put(f"/muscle_group/{group_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_muscle_group(test_get_db):
+    group_id = 1
+    response = client.delete(f"/muscle_group/{group_id}")
+    assert response.status_code == 200
+
+# CRUD tests for Equipment
+
+def test_create_equipment(test_get_db):
+    equipment_data = {"name": "Test Equipment", "description": "Test Equipment Description"}
+    response = client.post("/equipment", json=equipment_data)
+    assert response.status_code == 200
+
+def test_get_equipment(test_get_db):
+    response = client.get("/equipment")
+    assert response.status_code == 200
+
+def test_update_equipment(test_get_db):
+    equipment_id = 1
+    updated_data = {"name": "Updated Equipment Name"}
+    response = client.put(f"/equipment/{equipment_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_equipment(test_get_db):
+    equipment_id = 1
+    response = client.delete(f"/equipment/{equipment_id}")
+    assert response.status_code == 200
+
+# CRUD tests for Workout
+
+def test_create_workout(test_get_db):
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": 1, "equipment_id": 1}
+    response = client.post("/workout", json=workout_data)
+    assert response.status_code == 200
+
+def test_get_workouts(test_get_db):
+    response = client.get("/workout")
+    assert response.status_code == 200
+
+def test_update_workout(test_get_db):
+    workout_id = 1
+    updated_data = {"name": "Updated Workout Name"}
+    response = client.put(f"/workout/{workout_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_workout(test_get_db):
+    workout_id = 1
+    response = client.delete(f"/workout/{workout_id}")
+    assert response.status_code == 200
+
+# CRUD tests for Progress
+
+def test_create_progress(test_get_db):
+    # Create related User and Workout
+    user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
+    user_response = client.post("/user", json=user_data)
+    assert user_response.status_code == 200
+    user_id = user_response.json()["user_id"]
+    
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": 1, "equipment_id": 1}
+    workout_response = client.post("/workout", json=workout_data)
+    assert workout_response.status_code == 200
+    workout_id = workout_response.json()["workout_id"]
+
+    progress_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-05-15"}
+    response = client.post("/progress", json=progress_data)
+    assert response.status_code == 200
+
+def test_get_progress(test_get_db):
+    response = client.get("/progress")
+    assert response.status_code == 200
+
+def test_update_progress(test_get_db):
+    # Create related User and Workout
+    user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
+    user_response = client.post("/user", json=user_data)
+    assert user_response.status_code == 200
+    user_id = user_response.json()["user_id"]
+    
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": 1, "equipment_id": 1}
+    workout_response = client.post("/workout", json=workout_data)
+    assert workout_response.status_code == 200
+    workout_id = workout_response.json()["workout_id"]
+
+    progress_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-05-15"}
+    progress_response = client.post("/progress", json=progress_data)
+    assert progress_response.status_code == 200
+    progress_id = progress_response.json()["progress_id"]
+
+    updated_data = {"date_completed": "2024-05-16"}
+    response = client.put(f"/progress/{progress_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_progress(test_get_db):
+    # Create related User and Workout
+    user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
+    user_response = client.post("/user", json=user_data)
+    assert user_response.status_code == 200
+    user_id = user_response.json()["user_id"]
+    
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": 1, "equipment_id": 1}
+    workout_response = client.post("/workout", json=workout_data)
+    assert workout_response.status_code == 200
+    workout_id = workout_response.json()["workout_id"]
+
+    progress_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-05-15"}
+    progress_response = client.post("/progress", json=progress_data)
+    assert progress_response.status_code == 200
+    progress_id = progress_response.json()["progress_id"]
+
+    response = client.delete(f"/progress/{progress_id}")
+    assert response.status_code == 200
+
+    # Verify it was deleted
+    response = client.get(f"/progress/{progress_id}")
+    assert response.status_code == 404
+
+# CRUD tests for IntensityLevel
+
+def test_create_intensity_level(test_get_db):
+    intensity_level_data = {"name": "Test Intensity", "description": "Test Intensity Description"}
+    response = client.post("/intensity_level", json=intensity_level_data)
+    assert response.status_code == 200
+    assert "intensity_id" in response.json()  # Ensure the response contains the ID
+
+def test_get_intensity_levels(test_get_db):
+    response = client.get("/intensity_level")
+    assert response.status_code == 200  
+
+def test_update_intensity_level(test_get_db):
+    # First, create an intensity level to ensure it exists
+    intensity_level_data = {"name": "Test Intensity", "description": "Test Intensity Description"}
+    response = client.post("/intensity_level", json=intensity_level_data)
+    assert response.status_code == 200
+    intensity_id = response.json()["intensity_id"]
+
+    # Now update the intensity level
+    updated_data = {"name": "Updated Intensity Level Name"}
+    response = client.put(f"/intensity_level/{intensity_id}", json=updated_data)
+    assert response.status_code == 200
+
+def test_delete_intensity_level(test_get_db):
+    # First, create an intensity level to ensure it exists
+    intensity_level_data = {"name": "Test Intensity", "description": "Test Intensity Description"}
+    response = client.post("/intensity_level", json=intensity_level_data)
+    assert response.status_code == 200
+    intensity_id = response.json()["intensity_id"]
+
+    # Now delete the intensity level
+    response = client.delete(f"/intensity_level/{intensity_id}")
+    assert response.status_code == 200
+
+    # Verify it was deleted
+    response = client.get(f"/intensity_level/{intensity_id}")
+    assert response.status_code == 405

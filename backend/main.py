@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 
 from database import get_db
 from models import User, Goal, MuscleGroup, Equipment, Workout, Progress, IntensityLevel
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -43,9 +44,11 @@ async def get_intensity_levels(db: Session = Depends(get_db)) -> list[IntensityL
 
 # Post operations for User
 @app.post("/user")
-async def create_user(user: User, db: Session = Depends(get_db)) -> None:
+async def create_user(user: User, db: Session = Depends(get_db)) -> User:
     db.add(user)
     db.commit()
+    db.refresh(user)  # This will refresh the instance with the database's updated state
+    return user
 
 # Post operations for Goal
 @app.post("/goal")
@@ -67,21 +70,27 @@ async def create_equipment(equipment: Equipment, db: Session = Depends(get_db)) 
 
 # Post operations for Workout
 @app.post("/workout")
-async def create_workout(workout: Workout, db: Session = Depends(get_db)) -> None:
+async def create_workout(workout: Workout, db: Session = Depends(get_db)) -> Workout:
     db.add(workout)
     db.commit()
+    db.refresh(workout)  # This will refresh the instance with the database's updated state
+    return workout
 
 # Post operations for Progress
 @app.post("/progress")
-async def create_progress(progress: Progress, db: Session = Depends(get_db)) -> None:
+async def create_progress(progress: Progress, db: Session = Depends(get_db)) -> Progress:
     db.add(progress)
     db.commit()
+    db.refresh(progress)  # This will refresh the instance with the database's updated state
+    return progress
 
 # Post operations for IntensityLevel
 @app.post("/intensity_level")
-async def create_intensity_level(intensity_level: IntensityLevel, db: Session = Depends(get_db)) -> None:
+async def create_intensity_level(intensity_level: IntensityLevel, db: Session = Depends(get_db)):
     db.add(intensity_level)
     db.commit()
+    db.refresh(intensity_level)  # This will refresh the instance with the database's updated state
+    return JSONResponse(status_code=200, content=intensity_level.dict())
     
 # Update or create operations for User
 @app.put("/user/{user_id}")
@@ -148,10 +157,10 @@ async def update_or_create_workout(workout_id: int, workout: Workout, db: Sessio
 async def update_or_create_progress(progress_id: int, progress: Progress, db: Session = Depends(get_db)) -> None:
     db_progress = db.get(Progress, progress_id)
     if not db_progress:
-        db_progress = Progress(**progress.dict(), progress_id=progress_id)
+        db_progress = Progress(progress_id=progress_id, **progress.dict())
         db.add(db_progress)
     else:
-        for key, value in progress.dict().items():
+        for key, value in progress.dict(exclude_unset=True).items():
             setattr(db_progress, key, value)
     db.commit()
 
@@ -163,7 +172,7 @@ async def update_or_create_intensity_level(intensity_id: int, intensity_level: I
         db_intensity_level = IntensityLevel(**intensity_level.dict(), intensity_id=intensity_id)
         db.add(db_intensity_level)
     else:
-        for key, value in intensity_level.dict().items():
+        for key, value in intensity_level.dict(exclude_unset=True).items():
             setattr(db_intensity_level, key, value)
     db.commit()
 
