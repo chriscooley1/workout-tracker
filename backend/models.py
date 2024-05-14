@@ -14,14 +14,15 @@ class Goal(SQLModel, table=True):
     name: str
     goal_description: str
     user_id: int = Field(foreign_key="users.user_id")
-
     user: User = Relationship(back_populates="goals")
 
 class MuscleGroup(SQLModel, table=True):
+    __tablename__ = "muscle_groups"
     group_id: int = Field(default=None, primary_key=True)
     name: str
 
 class Equipment(SQLModel, table=True):
+    __tablename__ = "equipment"
     equipment_id: int = Field(default=None, primary_key=True)
     name: str
     description: str
@@ -31,7 +32,7 @@ class Workout(SQLModel, table=True):
     workout_id: int = Field(default=None, primary_key=True)
     name: str
     description: str
-    muscle_group_id: int = Field(foreign_key="muscle_groups.group_id")
+    group_id: int = Field(foreign_key="muscle_groups.group_id")
     equipment_id: int = Field(foreign_key="equipment.equipment_id")
 
 class Progress(SQLModel, table=True):
@@ -42,6 +43,7 @@ class Progress(SQLModel, table=True):
     date_completed: str
 
 class IntensityLevel(SQLModel, table=True):
+    __tablename__ = "intensity_levels"
     intensity_id: int = Field(default=None, primary_key=True)
     name: str
     description: str
