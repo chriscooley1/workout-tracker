@@ -95,7 +95,7 @@ async def create_progress(progress: Progress, db: Session = Depends(get_db)) -> 
 async def create_intensity_level(intensity_level: IntensityLevel, db: Session = Depends(get_db)):
     db.add(intensity_level)
     db.commit()
-    db.refresh(intensity_level)  # This will refresh the instance with the database's updated state
+    db.refresh(intensity_level)
     return JSONResponse(status_code=200, content=intensity_level.model_dump())
     
 # Update or create operations for User
@@ -122,26 +122,6 @@ async def update_or_create_goal(goal_id: int, goal: Goal, db: Session = Depends(
             setattr(db_goal, key, value)
     db.commit()
 
-# Update or create operations for MuscleGroup
-@app.put("/muscle_group/{group_id}")
-async def update_or_create_muscle_group(group_id: int, muscle_group: MuscleGroup, db: Session = Depends(get_db)) -> None:
-    db_group = db.get(MuscleGroup, group_id)
-    if not db_group:
-        raise HTTPException(status_code=404, detail="Muscle Group not found")
-    for key, value in muscle_group.dict(exclude_unset=True).items():
-        setattr(db_group, key, value)
-    db.commit()
-
-# Update or create operations for Equipment
-@app.put("/equipment/{equipment_id}")
-async def update_or_create_equipment(equipment_id: int, equipment: Equipment, db: Session = Depends(get_db)) -> None:
-    db_equipment = db.get(Equipment, equipment_id)
-    if not db_equipment:
-        raise HTTPException(status_code=404, detail="Equipment not found")
-    for key, value in equipment.dict(exclude_unset=True).items():
-        setattr(db_equipment, key, value)
-    db.commit()
-
 # Update or create operations for Workout
 @app.put("/workout/{workout_id}")
 async def update_or_create_workout(workout_id: int, workout: Workout, db: Session = Depends(get_db)) -> None:
@@ -165,18 +145,6 @@ async def update_progress(progress_id: int, updated_progress: Progress, db: Sess
     db.refresh(progress)
     return progress
 
-# Update or create operations for IntensityLevel
-@app.put("/intensity_level/{intensity_id}")
-async def update_or_create_intensity_level(intensity_id: int, intensity_level: IntensityLevel, db: Session = Depends(get_db)) -> None:
-    db_intensity_level = db.get(IntensityLevel, intensity_id)
-    if not db_intensity_level:
-        db_intensity_level = IntensityLevel(**intensity_level.dict(), intensity_id=intensity_id)
-        db.add(db_intensity_level)
-    else:
-        for key, value in intensity_level.model_dump(exclude_unset=True).items():
-            setattr(db_intensity_level, key, value)
-    db.commit()
-
 # Delete operations for User
 @app.delete("/user/{user_id}")
 async def remove_user(user_id: int, db: Session = Depends(get_db)):
@@ -197,26 +165,6 @@ async def remove_goal(goal_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Goal deleted successfully"}
 
-# Delete operations for MuscleGroup
-@app.delete("/muscle_group/{group_id}")
-async def remove_muscle_group(group_id: int, db: Session = Depends(get_db)):
-    muscle_group = db.get(MuscleGroup, group_id)
-    if not muscle_group:
-        raise HTTPException(status_code=404, detail="Muscle Group not found")
-    db.delete(muscle_group)
-    db.commit()
-    return {"message": "Muscle Group deleted successfully"}
-
-# Delete operations for Equipment
-@app.delete("/equipment/{equipment_id}")
-async def remove_equipment(equipment_id: int, db: Session = Depends(get_db)):
-    equipment = db.get(Equipment, equipment_id)
-    if not equipment:
-        raise HTTPException(status_code=404, detail="Equipment not found")
-    db.delete(equipment)
-    db.commit()
-    return {"message": "Equipment deleted successfully"}
-
 # Delete operations for Workout
 @app.delete("/workout/{workout_id}")
 async def remove_workout(workout_id: int, db: Session = Depends(get_db)):
@@ -236,13 +184,3 @@ async def delete_progress(progress_id: int, db: Session = Depends(get_db)) -> JS
     db.delete(progress)
     db.commit()
     return JSONResponse(status_code=200, content={"message": "Progress deleted successfully"})
-
-# Delete operations for IntensityLevel
-@app.delete("/intensity_level/{intensity_id}")
-async def remove_intensity_level(intensity_id: int, db: Session = Depends(get_db)):
-    intensity_level = db.get(IntensityLevel, intensity_id)
-    if not intensity_level:
-        raise HTTPException(status_code=404, detail="Intensity Level not found")
-    db.delete(intensity_level)
-    db.commit()
-    return {"message": "Intensity Level deleted successfully"}

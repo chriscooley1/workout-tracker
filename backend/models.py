@@ -34,6 +34,9 @@ class Workout(SQLModel, table=True):
     description: str
     group_id: int = Field(foreign_key="muscle_groups.group_id")
     equipment_id: int = Field(foreign_key="equipment.equipment_id")
+    reps: int = Field(default=None)
+    sets: int = Field(default=None)
+    weights: float = Field(default=None)
 
 class Progress(SQLModel, table=True):
     __tablename__ = "progress"
