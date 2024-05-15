@@ -47,33 +47,39 @@ async def get_intensity_levels(db: Session = Depends(get_db)) -> list[IntensityL
 async def create_user(user: User, db: Session = Depends(get_db)) -> User:
     db.add(user)
     db.commit()
-    db.refresh(user)  # This will refresh the instance with the database's updated state
+    db.refresh(user)
     return user
 
 # Post operations for Goal
 @app.post("/goal")
-async def create_goal(goal: Goal, db: Session = Depends(get_db)) -> None:
+async def create_goal(goal: Goal, db: Session = Depends(get_db)) -> Goal:
     db.add(goal)
     db.commit()
+    db.refresh(goal)
+    return goal
 
 # Post operations for MuscleGroup
 @app.post("/muscle_group")
-async def create_muscle_group(muscle_group: MuscleGroup, db: Session = Depends(get_db)) -> None:
+async def create_muscle_group(muscle_group: MuscleGroup, db: Session = Depends(get_db)) -> MuscleGroup:
     db.add(muscle_group)
     db.commit()
+    db.refresh(muscle_group)
+    return muscle_group
 
 # Post operations for Equipment
 @app.post("/equipment")
-async def create_equipment(equipment: Equipment, db: Session = Depends(get_db)) -> None:
+async def create_equipment(equipment: Equipment, db: Session = Depends(get_db)) -> Equipment:
     db.add(equipment)
     db.commit()
+    db.refresh(equipment)
+    return equipment
 
 # Post operations for Workout
 @app.post("/workout")
 async def create_workout(workout: Workout, db: Session = Depends(get_db)) -> Workout:
     db.add(workout)
     db.commit()
-    db.refresh(workout)  # This will refresh the instance with the database's updated state
+    db.refresh(workout)
     return workout
 
 # Post operations for Progress
@@ -81,7 +87,7 @@ async def create_workout(workout: Workout, db: Session = Depends(get_db)) -> Wor
 async def create_progress(progress: Progress, db: Session = Depends(get_db)) -> Progress:
     db.add(progress)
     db.commit()
-    db.refresh(progress)  # This will refresh the instance with the database's updated state
+    db.refresh(progress)
     return progress
 
 # Post operations for IntensityLevel
@@ -121,11 +127,9 @@ async def update_or_create_goal(goal_id: int, goal: Goal, db: Session = Depends(
 async def update_or_create_muscle_group(group_id: int, muscle_group: MuscleGroup, db: Session = Depends(get_db)) -> None:
     db_group = db.get(MuscleGroup, group_id)
     if not db_group:
-        db_group = MuscleGroup(**muscle_group.dict(), group_id=group_id)
-        db.add(db_group)
-    else:
-        for key, value in muscle_group.dict().items():
-            setattr(db_group, key, value)
+        raise HTTPException(status_code=404, detail="Muscle Group not found")
+    for key, value in muscle_group.dict(exclude_unset=True).items():
+        setattr(db_group, key, value)
     db.commit()
 
 # Update or create operations for Equipment
@@ -133,11 +137,9 @@ async def update_or_create_muscle_group(group_id: int, muscle_group: MuscleGroup
 async def update_or_create_equipment(equipment_id: int, equipment: Equipment, db: Session = Depends(get_db)) -> None:
     db_equipment = db.get(Equipment, equipment_id)
     if not db_equipment:
-        db_equipment = Equipment(**equipment.dict(), equipment_id=equipment_id)
-        db.add(db_equipment)
-    else:
-        for key, value in equipment.dict().items():
-            setattr(db_equipment, key, value)
+        raise HTTPException(status_code=404, detail="Equipment not found")
+    for key, value in equipment.dict(exclude_unset=True).items():
+        setattr(db_equipment, key, value)
     db.commit()
 
 # Update or create operations for Workout
@@ -154,15 +156,14 @@ async def update_or_create_workout(workout_id: int, workout: Workout, db: Sessio
 
 # Update or create operations for Progress
 @app.put("/progress/{progress_id}")
-async def update_or_create_progress(progress_id: int, progress: Progress, db: Session = Depends(get_db)) -> None:
-    db_progress = db.get(Progress, progress_id)
-    if not db_progress:
-        db_progress = Progress(progress_id=progress_id, **progress.dict())
-        db.add(db_progress)
-    else:
-        for key, value in progress.dict(exclude_unset=True).items():
-            setattr(db_progress, key, value)
+async def update_progress(progress_id: int, updated_progress: Progress, db: Session = Depends(get_db)) -> Progress:
+    progress = db.get(Progress, progress_id)
+    if not progress:
+        raise HTTPException(status_code=404, detail="Progress not found")
+    progress.date_completed = updated_progress.date_completed
     db.commit()
+    db.refresh(progress)
+    return progress
 
 # Update or create operations for IntensityLevel
 @app.put("/intensity_level/{intensity_id}")
@@ -228,13 +229,13 @@ async def remove_workout(workout_id: int, db: Session = Depends(get_db)):
 
 # Delete operations for Progress
 @app.delete("/progress/{progress_id}")
-async def remove_progress(progress_id: int, db: Session = Depends(get_db)):
+async def delete_progress(progress_id: int, db: Session = Depends(get_db)) -> JSONResponse:
     progress = db.get(Progress, progress_id)
     if not progress:
         raise HTTPException(status_code=404, detail="Progress not found")
     db.delete(progress)
     db.commit()
-    return {"message": "Progress deleted successfully"}
+    return JSONResponse(status_code=200, content={"message": "Progress deleted successfully"})
 
 # Delete operations for IntensityLevel
 @app.delete("/intensity_level/{intensity_id}")
