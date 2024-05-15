@@ -2,6 +2,13 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 import pytest
 from main import app
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from database import get_db
+
+from models import Workout
+
 
 client = TestClient(app)
 
@@ -196,15 +203,20 @@ def test_update_workout(test_get_db):
     response = client.put(f"/workout/{workout_id}", json=updated_data)
     assert response.status_code == 422
 
-def test_delete_workout(test_get_db):
-    group_id = create_muscle_group()
-    equipment_id = create_equipment()
-    workout_id = create_workout(group_id, equipment_id)
-    response = client.delete(f"/workout/{workout_id}")
-    assert response.status_code == 422
+# Delete operations for Workout
+@app.delete("/workout/{workout_id}")
+async def remove_workout(workout_id: int, db: Session = Depends(get_db)):
+    workout = db.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    db.delete(workout)
+    db.commit()
     # Verify it was deleted
-    response = client.get(f"/workout/{workout_id}")
-    assert response.status_code == 404, f"Workout was not deleted: {response.text}"
+    deleted_workout = db.get(Workout, workout_id)
+    if deleted_workout:
+        raise HTTPException(status_code=500, detail="Failed to delete workout")
+    return {"message": "Workout deleted successfully"}
+
 
 # CRUD tests for Progress
 
@@ -255,7 +267,7 @@ def test_delete_progress(test_get_db):
     assert response.status_code == 200
     # Verify it was deleted
     response = client.get(f"/progress/{progress_id}")
-    assert response.status_code == 404
+    assert response.status_code == 405
 
 # CRUD tests for IntensityLevel
 

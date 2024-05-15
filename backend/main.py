@@ -96,7 +96,7 @@ async def create_intensity_level(intensity_level: IntensityLevel, db: Session = 
     db.add(intensity_level)
     db.commit()
     db.refresh(intensity_level)  # This will refresh the instance with the database's updated state
-    return JSONResponse(status_code=200, content=intensity_level.dict())
+    return JSONResponse(status_code=200, content=intensity_level.model_dump())
     
 # Update or create operations for User
 @app.put("/user/{user_id}")
@@ -173,7 +173,7 @@ async def update_or_create_intensity_level(intensity_id: int, intensity_level: I
         db_intensity_level = IntensityLevel(**intensity_level.dict(), intensity_id=intensity_id)
         db.add(db_intensity_level)
     else:
-        for key, value in intensity_level.dict(exclude_unset=True).items():
+        for key, value in intensity_level.model_dump(exclude_unset=True).items():
             setattr(db_intensity_level, key, value)
     db.commit()
 
