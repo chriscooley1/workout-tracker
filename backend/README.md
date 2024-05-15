@@ -1,29 +1,31 @@
 # Workout Tracker
 
-This workout tracker utilizes SQLModel, a library for SQL databases, to define the structure of its database tables and manage relationships between them. Here's a description of each component:
+Welcome to the Workout Tracker! This tool helps you stay on top of your fitness journey by seamlessly organizing your workouts and progress. Let's break down its key components:
 
-1. User: Represents a user of the workout tracker. Each user has a unique user_id, username, email, and password. Users can set goals which are related to them through the goals relationship.
+1. User: Each user has a unique identity comprising a username, email, and password. Users can set and track their fitness goals, making the experience personalized and tailored to individual aspirations.
 
-2. Goal: Represents a fitness goal set by a user. Each goal has a unique goal_id, name, and description. Goals are associated with a specific user through the user_id field and the user relationship.
+2. Goal: Fitness goals are crucial for motivation and progress. With the Goal feature, you can define specific objectives, complete with names and descriptions, to keep you focused and driven.
 
-3. MuscleGroup: Represents a muscle group targeted in a workout. Each muscle group has a unique group_id and a name.
+3. MuscleGroup: Workouts often target specific muscle groups for comprehensive training. The MuscleGroup feature categorizes exercises according to the muscles they engage, facilitating efficient planning and balanced workouts.
 
-4. Equipment: Represents workout equipment. Each equipment item has a unique equipment_id, name, and description.
+4. Equipment: From dumbbells to treadmills, having the right equipment enhances your workout experience. Equipment items are cataloged with names and descriptions, ensuring you have the necessary tools for effective training.
 
-5. Workout: Represents a specific workout routine. Each workout has a unique workout_id, name, description, and is associated with a muscle group and equipment through the muscle_group_id and equipment_id fields, respectively.
+5. Workout: Each workout routine is a step toward your fitness goals. Workouts are detailed with names, descriptions, and associations with muscle groups and equipment, offering a structured approach to achieving your desired results.
 
-6. Progress: Represents the progress made by a user in completing workouts. Each progress entry has a unique progress_id, user_id, workout_id, and date_completed field. Progress entries are linked to users and workouts through the user_id and workout_id fields.
+6. Progress: Tracking progress is essential for staying motivated and accountable. Progress entries document your achievements, including the date completed, tying your efforts directly to your fitness journey.
 
-7. IntensityLevel: Represents the intensity level of a workout. Each intensity level has a unique intensity_id, name, and description.
+7. IntensityLevel: Not all workouts are created equal. The IntensityLevel feature allows you to categorize workouts based on their intensity, helping you tailor your training to match your current fitness level and objectives.
 
 ## Installation
 
-1. First you'll need to pull down the code into a directory of your choosing
+Getting started with the Workout Tracker is simple:
 
-2. Make sure to run a 
-   pip install -r requirements.txt
-   which will install everything you need to run the program.
+1. Clone the repository to a directory of your choice.
 
-3. If you're using vscode, click run and debug and select the Python Debugger: FastAPI option
+2. Navigate to the project directory and install dependencies by running pip install -r requirements.txt.
 
-4. You'll also need to make sure you create a .env file, which is where you'll put your database info.
+3. If you're using Visual Studio Code, launch the Python Debugger: FastAPI option to run and debug the program seamlessly.
+
+4. Don't forget to create a .env file to store your database information securely.
+
+With the Workout Tracker, embark on your fitness journey with confidence and clarity, knowing that every step you take is supported and organized for success.

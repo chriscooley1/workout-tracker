@@ -79,16 +79,8 @@ def create_goal_with_user(user_id):
     assert response.status_code == 200, f"Failed to create goal: {response.text}"
     return response.json().get("id")
 
-def create_workout(group_id, equipment_id, reps=None, sets=None, weights=None):
-    workout_data = {
-        "name": "Test Workout",
-        "description": "Test Workout Description",
-        "group_id": group_id,
-        "equipment_id": equipment_id,
-        "reps": reps,
-        "sets": sets,
-        "weights": weights
-    }
+def create_workout(group_id, equipment_id):
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": group_id, "equipment_id": equipment_id}
     response = client.post("/workout", json=workout_data)
     assert response.status_code == 200, f"Failed to create workout: {response.text}"
     return response.json().get("id")
