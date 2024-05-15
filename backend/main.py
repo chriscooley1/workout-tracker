@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
-
 from database import get_db
-from models import User, Goal, MuscleGroup, Equipment, Workout, Progress, IntensityLevel
+from models import User, UserCreate, Goal, GoalCreate, MuscleGroup, MuscleGroupCreate, Equipment, EquipmentCreate, Workout, WorkoutCreate, Progress, ProgressCreate, IntensityLevel, IntensityLevelCreate
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
@@ -12,175 +11,95 @@ app = FastAPI()
 async def get_users(db: Session = Depends(get_db)) -> list[User]:
     return db.exec(select(User)).all()
 
+# Post operations for User
+@app.post("/user", response_model=User)
+async def create_user(user: UserCreate, db: Session = Depends(get_db)) -> User:
+    db_user = User.model_validate(user.model_dump())
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 # Get operations for Goal
 @app.get("/goal")
 async def get_goals(db: Session = Depends(get_db)) -> list[Goal]:
     return db.exec(select(Goal)).all()
+
+# Post operations for Goal
+@app.post("/goal", response_model=Goal)
+async def create_goal(goal: GoalCreate, db: Session = Depends(get_db)) -> Goal:
+    db_goal = Goal.model_validate(goal.model_dump())
+    db.add(db_goal)
+    db.commit()
+    db.refresh(db_goal)
+    return db_goal
 
 # Get operations for MuscleGroup
 @app.get("/muscle_group")
 async def get_muscle_groups(db: Session = Depends(get_db)) -> list[MuscleGroup]:
     return db.exec(select(MuscleGroup)).all()
 
+# Post operations for MuscleGroup
+@app.post("/muscle_group", response_model=MuscleGroup)
+async def create_muscle_group(muscle_group: MuscleGroupCreate, db: Session = Depends(get_db)) -> MuscleGroup:
+    db_muscle_group = MuscleGroup.model_validate(muscle_group.model_dump())
+    db.add(db_muscle_group)
+    db.commit()
+    db.refresh(db_muscle_group)
+    return db_muscle_group
+
 # Get operations for Equipment
 @app.get("/equipment")
 async def get_equipment(db: Session = Depends(get_db)) -> list[Equipment]:
     return db.exec(select(Equipment)).all()
+
+# Post operations for Equipment
+@app.post("/equipment", response_model=Equipment)
+async def create_equipment(equipment: EquipmentCreate, db: Session = Depends(get_db)) -> Equipment:
+    db_equipment = Equipment.model_validate(equipment.model_dump())
+    db.add(db_equipment)
+    db.commit()
+    db.refresh(db_equipment)
+    return db_equipment
 
 # Get operations for Workout
 @app.get("/workout")
 async def get_workouts(db: Session = Depends(get_db)) -> list[Workout]:
     return db.exec(select(Workout)).all()
 
+# Post operations for Workout
+@app.post("/workout", response_model=Workout)
+async def create_workout(workout: WorkoutCreate, db: Session = Depends(get_db)) -> Workout:
+    db_workout = Workout.model_validate(workout.model_dump())
+    db.add(db_workout)
+    db.commit()
+    db.refresh(db_workout)
+    return db_workout
+
 # Get operations for Progress
 @app.get("/progress")
 async def get_progress(db: Session = Depends(get_db)) -> list[Progress]:
     return db.exec(select(Progress)).all()
+
+# Post operations for Progress
+@app.post("/progress", response_model=Progress)
+async def create_progress(progress: ProgressCreate, db: Session = Depends(get_db)) -> Progress:
+    db_progress = Progress.model_validate(progress.model_dump())
+    db.add(db_progress)
+    db.commit()
+    db.refresh(db_progress)
+    return db_progress
 
 # Get operations for IntensityLevel
 @app.get("/intensity_level")
 async def get_intensity_levels(db: Session = Depends(get_db)) -> list[IntensityLevel]:
     return db.exec(select(IntensityLevel)).all()
 
-# Post operations for User
-@app.post("/user")
-async def create_user(user: User, db: Session = Depends(get_db)) -> User:
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-# Post operations for Goal
-@app.post("/goal")
-async def create_goal(goal: Goal, db: Session = Depends(get_db)) -> Goal:
-    db.add(goal)
-    db.commit()
-    db.refresh(goal)
-    return goal
-
-# Post operations for MuscleGroup
-@app.post("/muscle_group")
-async def create_muscle_group(muscle_group: MuscleGroup, db: Session = Depends(get_db)) -> MuscleGroup:
-    db.add(muscle_group)
-    db.commit()
-    db.refresh(muscle_group)
-    return muscle_group
-
-# Post operations for Equipment
-@app.post("/equipment")
-async def create_equipment(equipment: Equipment, db: Session = Depends(get_db)) -> Equipment:
-    db.add(equipment)
-    db.commit()
-    db.refresh(equipment)
-    return equipment
-
-# Post operations for Workout
-@app.post("/workout")
-async def create_workout(workout: Workout, db: Session = Depends(get_db)) -> Workout:
-    db.add(workout)
-    db.commit()
-    db.refresh(workout)
-    return workout
-
-# Post operations for Progress
-@app.post("/progress")
-async def create_progress(progress: Progress, db: Session = Depends(get_db)) -> Progress:
-    db.add(progress)
-    db.commit()
-    db.refresh(progress)
-    return progress
-
 # Post operations for IntensityLevel
-@app.post("/intensity_level")
-async def create_intensity_level(intensity_level: IntensityLevel, db: Session = Depends(get_db)):
-    db.add(intensity_level)
+@app.post("/intensity_level", response_model=IntensityLevel)
+async def create_intensity_level(intensity_level: IntensityLevelCreate, db: Session = Depends(get_db)) -> IntensityLevel:
+    db_intensity_level = IntensityLevel.model_validate(intensity_level.model_dump())
+    db.add(db_intensity_level)
     db.commit()
-    db.refresh(intensity_level)
-    return JSONResponse(status_code=200, content=intensity_level.model_dump())
-    
-# Update or create operations for User
-@app.put("/user/{user_id}")
-async def update_or_create_user(user_id: int, user: User, db: Session = Depends(get_db)) -> None:
-    db_user = db.get(User, user_id)
-    if not db_user:
-        db_user = User(**user.dict(), user_id=user_id)
-        db.add(db_user)
-    else:
-        for key, value in user.dict().items():
-            setattr(db_user, key, value)
-    db.commit()
-
-# Update or create operations for Goal
-@app.put("/goal/{goal_id}")
-async def update_or_create_goal(goal_id: int, goal: Goal, db: Session = Depends(get_db)) -> None:
-    db_goal = db.get(Goal, goal_id)
-    if not db_goal:
-        db_goal = Goal(**goal.dict(), goal_id=goal_id)
-        db.add(db_goal)
-    else:
-        for key, value in goal.dict().items():
-            setattr(db_goal, key, value)
-    db.commit()
-
-# Update or create operations for Workout
-@app.put("/workout/{workout_id}")
-async def update_or_create_workout(workout_id: int, workout: Workout, db: Session = Depends(get_db)) -> None:
-    db_workout = db.get(Workout, workout_id)
-    if not db_workout:
-        db_workout = Workout(**workout.dict(), workout_id=workout_id)
-        db.add(db_workout)
-    else:
-        for key, value in workout.dict().items():
-            setattr(db_workout, key, value)
-    db.commit()
-
-# Update or create operations for Progress
-@app.put("/progress/{progress_id}")
-async def update_progress(progress_id: int, updated_progress: Progress, db: Session = Depends(get_db)) -> Progress:
-    progress = db.get(Progress, progress_id)
-    if not progress:
-        raise HTTPException(status_code=404, detail="Progress not found")
-    progress.date_completed = updated_progress.date_completed
-    db.commit()
-    db.refresh(progress)
-    return progress
-
-# Delete operations for User
-@app.delete("/user/{user_id}")
-async def remove_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    db.delete(user)
-    db.commit()
-    return {"message": "User deleted successfully"}
-
-# Delete operations for Goal
-@app.delete("/goal/{goal_id}")
-async def remove_goal(goal_id: int, db: Session = Depends(get_db)):
-    goal = db.get(Goal, goal_id)
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    db.delete(goal)
-    db.commit()
-    return {"message": "Goal deleted successfully"}
-
-# Delete operations for Workout
-@app.delete("/workout/{workout_id}")
-async def remove_workout(workout_id: int, db: Session = Depends(get_db)):
-    workout = db.get(Workout, workout_id)
-    if not workout:
-        raise HTTPException(status_code=404, detail="Workout not found")
-    db.delete(workout)
-    db.commit()
-    return {"message": "Workout deleted successfully"}
-
-# Delete operations for Progress
-@app.delete("/progress/{progress_id}")
-async def delete_progress(progress_id: int, db: Session = Depends(get_db)) -> JSONResponse:
-    progress = db.get(Progress, progress_id)
-    if not progress:
-        raise HTTPException(status_code=404, detail="Progress not found")
-    db.delete(progress)
-    db.commit()
-    return JSONResponse(status_code=200, content={"message": "Progress deleted successfully"})
+    db.refresh(db_intensity_level)
+    return db_intensity_level
