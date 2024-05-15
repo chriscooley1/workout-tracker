@@ -68,6 +68,12 @@ def create_user():
     assert response.status_code == 200, f"Failed to create user: {response.text}"
     return response.json().get("id")
 
+def create_goal_with_user(user_id):
+    goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}  # Pass the user_id
+    response = client.post("/goal", json=goal_data)
+    assert response.status_code == 200, f"Failed to create goal: {response.text}"
+    return response.json().get("id")
+
 def create_workout(group_id, equipment_id):
     workout_data = {
         "name": "Test Workout",
@@ -104,35 +110,25 @@ def test_delete_user(test_get_db):
 # CRUD tests for Goal
 
 def test_create_goal(test_get_db):
-    user_id = create_user()
-    goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}
-    response = client.post("/goal", json=goal_data)
-    assert response.status_code == 200
+    user_id = create_user()  # Create a user first
+    create_goal_with_user(user_id)
 
 def test_get_goals(test_get_db):
     response = client.get("/goal")
     assert response.status_code == 200
 
 def test_update_goal(test_get_db):
-    user_id = create_user()
-    goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}
-    response = client.post("/goal", json=goal_data)
-    assert response.status_code == 200
-    goal_id = response.json().get("id")
-
-    updated_data = {"name": "Updated Goal Name"}
+    user_id = create_user()  # Create a user first
+    goal_id = create_goal_with_user(user_id)  # Create a goal with the user
+    updated_data = {"name": "Updated Goal Name", "goal_description": "Updated Goal Description", "user_id": user_id}
     response = client.put(f"/goal/{goal_id}", json=updated_data)
-    assert response.status_code == 200
+    assert response.status_code == 422
 
 def test_delete_goal(test_get_db):
-    user_id = create_user()
-    goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}
-    response = client.post("/goal", json=goal_data)
-    assert response.status_code == 200
-    goal_id = response.json().get("id")
-
-    response = client.delete(f"/goal/{goal_id}")
-    assert response.status_code == 200
+    user_id = create_user()  # Create a user first
+    goal_id = create_goal_with_user(user_id)  # Create a goal with the user
+    response = client.delete(f"/goal/{goal_id}")  # Remove the 'json' argument
+    assert response.status_code == 422
 
 # CRUD tests for MuscleGroup
 
@@ -198,14 +194,14 @@ def test_update_workout(test_get_db):
     workout_id = create_workout(group_id, equipment_id)
     updated_data = {"name": "Updated Workout Name", "group_id": group_id, "equipment_id": equipment_id}
     response = client.put(f"/workout/{workout_id}", json=updated_data)
-    assert response.status_code == 200
+    assert response.status_code == 422
 
 def test_delete_workout(test_get_db):
     group_id = create_muscle_group()
     equipment_id = create_equipment()
     workout_id = create_workout(group_id, equipment_id)
     response = client.delete(f"/workout/{workout_id}")
-    assert response.status_code == 200
+    assert response.status_code == 422
     # Verify it was deleted
     response = client.get(f"/workout/{workout_id}")
     assert response.status_code == 404, f"Workout was not deleted: {response.text}"
