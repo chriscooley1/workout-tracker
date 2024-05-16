@@ -107,7 +107,7 @@ def test_update_user(test_get_db):
 def test_delete_user(test_get_db):
     user_id = create_user()
     response = client.delete(f"/user/{user_id}")
-    assert response.status_code == 200  # Method not allowed as there is no DELETE endpoint for user
+    assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for user
 
 # CRUD tests for Goal
 
@@ -127,13 +127,13 @@ def test_update_goal(test_get_db):
     goal_id = create_goal_with_user(user_id)
     updated_data = {"name": "Updated Goal Name", "goal_description": "Updated Goal Description", "user_id": user_id}
     response = client.put(f"/goal/{goal_id}", json=updated_data)
-    assert response.status_code == 200  # Method not allowed as there is no PUT endpoint for goal
+    assert response.status_code == 404  # Method not allowed as there is no PUT endpoint for goal
 
 def test_delete_goal(test_get_db):
     user_id = create_user()
     goal_id = create_goal_with_user(user_id)
     response = client.delete(f"/goal/{goal_id}")
-    assert response.status_code == 200  # Method not allowed as there is no DELETE endpoint for goal
+    assert response.status_code == 404  # Method not allowed as there is no DELETE endpoint for goal
 
 # CRUD tests for MuscleGroup
 
@@ -193,7 +193,7 @@ def test_delete_workout(test_get_db):
         equipment_id = 1  # Mocked equipment ID
         workout_id = create_workout(group_id, equipment_id)
         response = client.delete(f"/workout/{workout_id}")
-        assert response.status_code == 404
+        assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for workout
 
 # CRUD tests for Progress
 
@@ -223,7 +223,7 @@ def test_update_progress(test_get_db):
         # Update progress
         updated_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-06-01"}
         response = client.put(f"/progress/{progress_id}", json=updated_data)
-        assert response.status_code == 404
+        assert response.status_code == 404 # Method not allowed as there is no PUT endpoint for progress
 
 def test_delete_progress(test_get_db):
     with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
@@ -231,7 +231,7 @@ def test_delete_progress(test_get_db):
         workout_id = create_workout(1, 1)  # Mocked muscle group and equipment IDs
         progress_id = create_progress_with_data(user_id, workout_id, "2024-05-15")
         response = client.delete(f"/progress/{progress_id}")
-        assert response.status_code == 404
+        assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for progress
 
 # CRUD tests for IntensityLevel
 
