@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_db
 from models import User, UserCreate, Goal, GoalCreate, MuscleGroup, MuscleGroupCreate, Equipment, EquipmentCreate, Workout, WorkoutCreate, Progress, ProgressCreate, IntensityLevel, IntensityLevelCreate
+from sqlmodel import delete
 
 app = FastAPI()
 
@@ -36,7 +37,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Delete associated goals before deleting the user
-    db.query(Goal).filter(Goal.user_id == user_id).delete(synchronize_session=False)
+    db.exec(delete(Goal).where(Goal.user_id == user_id))
     
     db.delete(db_user)
     db.commit()
