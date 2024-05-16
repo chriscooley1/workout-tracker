@@ -24,7 +24,7 @@ Getting started with the Workout Tracker is simple:
 
 2. Navigate to the project directory and install dependencies by running pip install -r requirements.txt.
 
-3. If you're using Visual Studio Code, launch the Python Debugger: FastAPI option to run and debug the program seamlessly.
+3. If you're using Visual Studio Code, launch the Python Debugger: FastAPI option to run and debug the program where you can test things using swagger.
 
 4. Don't forget to create a .env file to store your database information securely.
 
