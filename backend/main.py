@@ -20,6 +20,28 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)) -> User:
     db.refresh(db_user)
     return db_user
 
+# Put operations for User
+@app.put("/user/{user_id}", response_model=User)
+async def update_user(user_id: int, updated_user: UserCreate, db: Session = Depends(get_db)) -> User:
+    db_user = db.get(User, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    for key, value in updated_user.dict().items():
+        setattr(db_user, key, value)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+# Delete operations for User
+@app.delete("/user/{user_id}", response_model=User)
+async def delete_user(user_id: int, db: Session = Depends(get_db)) -> User:
+    db_user = db.get(User, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(db_user)
+    db.commit()
+    return db_user
+
 # Get operations for Goal
 @app.get("/goal")
 async def get_goals(db: Session = Depends(get_db)) -> list[Goal]:
@@ -34,12 +56,34 @@ async def create_goal(goal: GoalCreate, db: Session = Depends(get_db)) -> Goal:
     db.refresh(db_goal)
     return db_goal
 
-# Get operations for MuscleGroup
+# Put operations for Goal
+@app.put("/goal/{goal_id}", response_model=Goal)
+async def update_goal(goal_id: int, updated_goal: GoalCreate, db: Session = Depends(get_db)) -> Goal:
+    db_goal = db.get(Goal, goal_id)
+    if not db_goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    for key, value in updated_goal.model_dump().items():
+        setattr(db_goal, key, value)
+    db.commit()
+    db.refresh(db_goal)
+    return db_goal
+
+# Delete operations for Goal
+@app.delete("/goal/{goal_id}", response_model=Goal)
+async def delete_goal(goal_id: int, db: Session = Depends(get_db)) -> Goal:
+    db_goal = db.get(Goal, goal_id)
+    if not db_goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    db.delete(db_goal)
+    db.commit()
+    return db_goal
+
+# Get operations for Muscle Group
 @app.get("/muscle_group")
 async def get_muscle_groups(db: Session = Depends(get_db)) -> list[MuscleGroup]:
     return db.exec(select(MuscleGroup)).all()
 
-# Post operations for MuscleGroup
+# Post operations for Muscle Group
 @app.post("/muscle_group", response_model=MuscleGroup)
 async def create_muscle_group(muscle_group: MuscleGroupCreate, db: Session = Depends(get_db)) -> MuscleGroup:
     db_muscle_group = MuscleGroup.model_validate(muscle_group.model_dump())
@@ -76,6 +120,28 @@ async def create_workout(workout: WorkoutCreate, db: Session = Depends(get_db)) 
     db.refresh(db_workout)
     return db_workout
 
+# Put operations for Workout
+@app.put("/workout/{workout_id}", response_model=Workout)
+async def update_workout(workout_id: int, updated_workout: WorkoutCreate, db: Session = Depends(get_db)) -> Workout:
+    db_workout = db.get(Workout, workout_id)
+    if not db_workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    for key, value in updated_workout.dict().items():
+        setattr(db_workout, key, value)
+    db.commit()
+    db.refresh(db_workout)
+    return db_workout
+
+# Delete operations for Workout
+@app.delete("/workout/{workout_id}", response_model=Workout)
+async def delete_workout(workout_id: int, db: Session = Depends(get_db)) -> Workout:
+    db_workout = db.get(Workout, workout_id)
+    if not db_workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    db.delete(db_workout)
+    db.commit()
+    return db_workout
+
 # Get operations for Progress
 @app.get("/progress")
 async def get_progress(db: Session = Depends(get_db)) -> list[Progress]:
@@ -88,6 +154,28 @@ async def create_progress(progress: ProgressCreate, db: Session = Depends(get_db
     db.add(db_progress)
     db.commit()
     db.refresh(db_progress)
+    return db_progress
+
+# Put operations for Progress
+@app.put("/progress/{progress_id}", response_model=Progress)
+async def update_progress(progress_id: int, updated_progress: ProgressCreate, db: Session = Depends(get_db)) -> Progress:
+    db_progress = db.get(Progress, progress_id)
+    if not db_progress:
+        raise HTTPException(status_code=404, detail="Progress not found")
+    for key, value in updated_progress.dict().items():
+        setattr(db_progress, key, value)
+    db.commit()
+    db.refresh(db_progress)
+    return db_progress
+
+# Delete operations for Progress
+@app.delete("/progress/{progress_id}", response_model=Progress)
+async def delete_progress(progress_id: int, db: Session = Depends(get_db)) -> Progress:
+    db_progress = db.get(Progress, progress_id)
+    if not db_progress:
+        raise HTTPException(status_code=404, detail="Progress not found")
+    db.delete(db_progress)
+    db.commit()
     return db_progress
 
 # Get operations for IntensityLevel
