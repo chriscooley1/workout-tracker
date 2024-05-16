@@ -2,17 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_db
 from models import User, UserCreate, Goal, GoalCreate, MuscleGroup, MuscleGroupCreate, Equipment, EquipmentCreate, Workout, WorkoutCreate, Progress, ProgressCreate, IntensityLevel, IntensityLevelCreate
-from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-# Get operations for User
-@app.get("/user")
+# Users CRUD operations
+@app.get("/users")
 async def get_users(db: Session = Depends(get_db)) -> list[User]:
     return db.exec(select(User)).all()
 
-# Post operations for User
-@app.post("/user", response_model=User)
+@app.post("/users", response_model=User)
 async def create_user(user: UserCreate, db: Session = Depends(get_db)) -> User:
     db_user = User.model_validate(user.model_dump())
     db.add(db_user)
@@ -20,8 +18,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)) -> User:
     db.refresh(db_user)
     return db_user
 
-# Put operations for User
-@app.put("/user/{user_id}", response_model=User)
+@app.put("/users/{user_id}", response_model=User)
 async def update_user(user_id: int, updated_user: UserCreate, db: Session = Depends(get_db)) -> User:
     db_user = db.get(User, user_id)
     if not db_user:
@@ -32,12 +29,15 @@ async def update_user(user_id: int, updated_user: UserCreate, db: Session = Depe
     db.refresh(db_user)
     return db_user
 
-# Delete operations for User
 @app.delete("/user/{user_id}", response_model=User)
 async def delete_user(user_id: int, db: Session = Depends(get_db)) -> User:
     db_user = db.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete associated goals before deleting the user
+    db.query(Goal).filter(Goal.user_id == user_id).delete(synchronize_session=False)
+    
     db.delete(db_user)
     db.commit()
     return db_user

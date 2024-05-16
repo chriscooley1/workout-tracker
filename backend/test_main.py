@@ -2,10 +2,6 @@ import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from main import app
-from database import get_db
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from main import create_muscle_group
 
 client = TestClient(app)
 
