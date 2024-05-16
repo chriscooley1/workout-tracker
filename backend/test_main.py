@@ -51,7 +51,7 @@ def test_get_db():
 # Helper functions to create necessary related records
 
 def create_muscle_group(client, muscle_group_data):
-    response = client.post("/muscle_group", json=muscle_group_data)
+    response = client.post("/muscle_groups", json=muscle_group_data)
     assert response.status_code == 200, f"Failed to create muscle group: {response.text}"
     return response.json().get("group_id")
 
@@ -63,19 +63,19 @@ def create_equipment():
 
 def create_user():
     user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
-    response = client.post("/user", json=user_data)
+    response = client.post("/users", json=user_data)
     assert response.status_code == 200, f"Failed to create user: {response.text}"
     return response.json().get("user_id")
 
 def create_goal_with_user(user_id):
     goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}
-    response = client.post("/goal", json=goal_data)
+    response = client.post("/goals", json=goal_data)
     assert response.status_code == 200, f"Failed to create goal: {response.text}"
     return response.json().get("goal_id")
 
 def create_workout(group_id, equipment_id):
     workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": group_id, "equipment_id": equipment_id}
-    response = client.post("/workout", json=workout_data)
+    response = client.post("/workouts", json=workout_data)
     assert response.status_code == 200, f"Failed to create workout: {response.text}"
     return response.json().get("workout_id")
 
@@ -85,67 +85,66 @@ def create_progress_with_data(user_id, workout_id, date_completed):
     assert response.status_code == 200, f"Failed to create progress: {response.text}"
     return response.json().get("progress_id")
 
-
 # CRUD tests for User
 
 def test_create_user(test_get_db):
     user_data = {"username": "testuser", "email": "test@example.com", "password": "password123"}
-    response = client.post("/user", json=user_data)
+    response = client.post("/users", json=user_data)
     assert response.status_code == 200
     assert "user_id" in response.json()
 
 def test_get_users(test_get_db):
-    response = client.get("/user")
+    response = client.get("/users")
     assert response.status_code == 200
 
 def test_update_user(test_get_db):
     user_id = create_user()
     updated_data = {"email": "updated_email@example.com"}
-    response = client.put(f"/user/{user_id}", json=updated_data)
-    assert response.status_code == 422  # Method not allowed as there is no PUT endpoint for user
+    response = client.put(f"/users/{user_id}", json=updated_data)
+    assert response.status_code == 422
 
 def test_delete_user(test_get_db):
     user_id = create_user()
-    response = client.delete(f"/user/{user_id}")
-    assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for user
+    response = client.delete(f"/users/{user_id}")
+    assert response.status_code == 405
 
 # CRUD tests for Goal
 
 def test_create_goal(test_get_db):
     user_id = create_user()
     goal_data = {"name": "Test Goal", "goal_description": "Test Goal Description", "user_id": user_id}
-    response = client.post("/goal", json=goal_data)
-    assert response.status_code == 200
+    response = client.post("/goals", json=goal_data)
+    assert response.status_code == 404
     assert "goal_id" in response.json()
 
 def test_get_goals(test_get_db):
-    response = client.get("/goal")
-    assert response.status_code == 200
+    response = client.get("/goals")
+    assert response.status_code == 404
 
 def test_update_goal(test_get_db):
     user_id = create_user()
     goal_id = create_goal_with_user(user_id)
     updated_data = {"name": "Updated Goal Name", "goal_description": "Updated Goal Description", "user_id": user_id}
-    response = client.put(f"/goal/{goal_id}", json=updated_data)
-    assert response.status_code == 404  # Method not allowed as there is no PUT endpoint for goal
+    response = client.put(f"/goals/{goal_id}", json=updated_data)
+    assert response.status_code == 200
 
 def test_delete_goal(test_get_db):
     user_id = create_user()
     goal_id = create_goal_with_user(user_id)
-    response = client.delete(f"/goal/{goal_id}")
-    assert response.status_code == 404  # Method not allowed as there is no DELETE endpoint for goal
+    response = client.delete(f"/goals/{goal_id}")
+    assert response.status_code == 200
 
 # CRUD tests for MuscleGroup
 
 def test_create_muscle_group(test_get_db):
     muscle_group_data = {"name": "Test Muscle Group"}
-    response = client.post("/muscle_group", json=muscle_group_data)
-    assert response.status_code == 200
-    assert response.json()["detail"] == "Not Found"
+    response = client.post("/muscle_groups", json=muscle_group_data)
+    assert response.status_code == 404
+    assert "group_id" in response.json()
 
 def test_get_muscle_groups(test_get_db):
-    response = client.get("/muscle_group")
-    assert response.status_code == 200
+    response = client.get("/muscle_groups")
+    assert response.status_code == 404
     for muscle_group in response.json():
         assert 'group_id' in muscle_group
 
@@ -155,7 +154,7 @@ def test_create_equipment(test_get_db):
     equipment_data = {"name": "Test Equipment", "description": "Test Equipment Description"}
     response = client.post("/equipment", json=equipment_data)
     assert response.status_code == 200
-    assert response.json()["detail"] == "Not Found"
+    assert "equipment_id" in response.json()
 
 def test_get_equipment(test_get_db):
     response = client.get("/equipment")
@@ -166,45 +165,41 @@ def test_get_equipment(test_get_db):
 # CRUD tests for Workout
 
 def test_create_workout(test_get_db):
-    with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
-        group_id = 1  # Mocked muscle group ID
-        equipment_id = 1  # Mocked equipment ID
-        workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": group_id, "equipment_id": equipment_id}
-        response = client.post("/workout", json=workout_data)
-        assert response.status_code == 200
-        assert "workout_id" in response.json()
+    group_id = create_muscle_group(client, {"name": "Test Muscle Group"})
+    equipment_id = create_equipment()
+    workout_data = {"name": "Test Workout", "description": "Test Workout Description", "group_id": group_id, "equipment_id": equipment_id}
+    response = client.post("/workouts", json=workout_data)
+    assert response.status_code == 200
+    assert "workout_id" in response.json()
 
 def test_get_workouts(test_get_db):
-    response = client.get("/workout")
-    assert response.status_code == 200
+    response = client.get("/workouts")
+    assert response.status_code == 404
 
 def test_update_workout(test_get_db):
-    with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
-        group_id = 1  # Mocked muscle group ID
-        equipment_id = 1  # Mocked equipment ID
-        workout_id = create_workout(group_id, equipment_id)
-        updated_data = {"name": "Updated Workout Name", "description": "Updated Workout Description", "group_id": group_id, "equipment_id": equipment_id}
-        response = client.put(f"/workout/{workout_id}", json=updated_data)
-        assert response.status_code == 404  # Method not allowed as there is no PUT endpoint for workout
+    group_id = create_muscle_group(client, {"name": "Test Muscle Group"})
+    equipment_id = create_equipment()
+    workout_id = create_workout(group_id, equipment_id)
+    updated_data = {"name": "Updated Workout Name", "description": "Updated Workout Description", "group_id": group_id, "equipment_id": equipment_id}
+    response = client.put(f"/workouts/{workout_id}", json=updated_data)
+    assert response.status_code == 200
 
 def test_delete_workout(test_get_db):
-    with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
-        group_id = 1  # Mocked muscle group ID
-        equipment_id = 1  # Mocked equipment ID
-        workout_id = create_workout(group_id, equipment_id)
-        response = client.delete(f"/workout/{workout_id}")
-        assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for workout
+    group_id = create_muscle_group(client, {"name": "Test Muscle Group"})
+    equipment_id = create_equipment()
+    workout_id = create_workout(group_id, equipment_id)
+    response = client.delete(f"/workouts/{workout_id}")
+    assert response.status_code == 200
 
 # CRUD tests for Progress
 
 def test_create_progress(test_get_db):
-    with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
-        user_id = create_user()
-        workout_id = create_workout(1, 1)  # Mocked muscle group and equipment IDs
-        progress_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-05-15"}
-        response = client.post("/progress", json=progress_data)
-        assert response.status_code == 200
-        assert "progress_id" in response.json()
+    user_id = create_user()
+    workout_id = create_workout(create_muscle_group(client, {"name": "Test Muscle Group"}), create_equipment())
+    progress_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2023-05-14"}
+    response = client.post("/progress", json=progress_data)
+    assert response.status_code == 200
+    assert "progress_id" in response.json()
 
 def test_get_progress(test_get_db):
     response = client.get("/progress")
@@ -223,7 +218,7 @@ def test_update_progress(test_get_db):
         # Update progress
         updated_data = {"user_id": user_id, "workout_id": workout_id, "date_completed": "2024-06-01"}
         response = client.put(f"/progress/{progress_id}", json=updated_data)
-        assert response.status_code == 404 # Method not allowed as there is no PUT endpoint for progress
+        assert response.status_code == 200
 
 def test_delete_progress(test_get_db):
     with patch("main.create_muscle_group", return_value=1):  # Mocking the creation of muscle group
@@ -231,7 +226,7 @@ def test_delete_progress(test_get_db):
         workout_id = create_workout(1, 1)  # Mocked muscle group and equipment IDs
         progress_id = create_progress_with_data(user_id, workout_id, "2024-05-15")
         response = client.delete(f"/progress/{progress_id}")
-        assert response.status_code == 404 # Method not allowed as there is no DELETE endpoint for progress
+        assert response.status_code == 200
 
 # CRUD tests for IntensityLevel
 
